@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int     @id @default(autoincrement())
+  name               String
+  email              String  @unique
+  password           String
+  passwordResetToken String? 
+  passwordResetTime  DateTime?
+  role               Role    @relation(fields: [roleId], references: [id])
+  roleId             Int
+  organization       Organization @relation(fields: [orgId], references: [id])
+  orgId              Int
+  group              Group?  @relation(fields: [groupId], references: [id])
+  groupId            Int?
+  isCommunityMember  Boolean    @default(false)
+  patients           Patient[] 
+  phone              String?
+}
+
+model Patient {
+  id                Int     @id @default(autoincrement())
+  name              String
+  dateOfBirth       DateTime
+  diagnosis         String?
+  carePlan          String?
+  incidentReports   IncidentReport[]
+  notes             Note[]
+  emergencyContact  String?
+  communityMember   User?    @relation(fields: [communityMemberId], references: [id])
+  communityMemberId Int?     // This field will hold the ID of the User associated with the Patient
+}
+
+model IncidentReport {
+  id           Int     @id @default(autoincrement())
+  date         DateTime
+  description  String
+  patient      Patient @relation(fields: [patientId], references: [id])
+  patientId    Int
+}
+
+model Note {
+  id           Int     @id @default(autoincrement())
+  date         DateTime
+  content      String
+  patient      Patient @relation(fields: [patientId], references: [id])
+  patientId    Int
+}
+
+model Role {
+  id   Int     @id @default(autoincrement())
+  name RoleName
+  users User[]
+}
+
+enum RoleName {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  COMMUNITY_MEMBER
+  PATIENT
+}
+
+model Organization {
+  id    Int     @id @default(autoincrement())
+  name  String
+  tier  Tier
+  users User[]
+  groups Group[]
+}
+
+enum Tier {
+  ESSENTIALS
+  SILVER
+  GOLD
+}
+
+model Group {
+  id             Int     @id @default(autoincrement())
+  name           String
+  organization   Organization @relation(fields: [orgId], references: [id])
+  orgId          Int
+  users          User[]
+}
